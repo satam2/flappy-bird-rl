@@ -9,8 +9,8 @@ public class FlappyEnvironment : MonoBehaviour
     [SerializeField] private PipeSpawnHandler _pipeSpawner;
     [SerializeField] private GameObject _menu;
     [SerializeField] private GroundObject _ground;
-    [SerializeField] private UserInterfaceHandler _ui;        // NEW
-    [SerializeField] private ScoreDisplayScript _scoreDisplay; // NEW
+    [SerializeField] private UserInterfaceHandler _ui;      
+    [SerializeField] private ScoreDisplayScript _scoreDisplay; 
 
     private TcpListener _server;
     private TcpClient _client;
