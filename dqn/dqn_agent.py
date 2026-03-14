@@ -42,7 +42,8 @@ class DQNAgent:
 
     def select_action(self, state):
         if np.random.rand() < self.epsilon:
-            return np.random.choice([0, 1], p=[0.7, 0.3])
+            # bias toward not flapping during exploration
+            return np.random.choice([0, 1], p=[0.9, 0.1])
         state_t = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         with torch.no_grad():
             return self.policy_net(state_t).argmax().item()

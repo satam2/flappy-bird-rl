@@ -73,7 +73,6 @@ public class PipeSpawnHandler : MonoBehaviour
         Transform point = pipe.transform.Find("Point");
         if (point == null)
         {
-            Debug.Log("Point not found!");
             return pipe.transform.position.y;
         }
         return point.position.y;

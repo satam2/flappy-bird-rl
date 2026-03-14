@@ -40,11 +40,6 @@ for episode in range(NUM_EPISODES):
         action = agent.select_action(state)
         next_state, reward, done = env.step(action)
 
-        # if episode < 3:  # ADD THIS BLOCK
-        #     print(f"State: {state} | Action: {action} | Reward: {reward} | Done: {done}")
-        
-        # print(f"Episode {episode:>4} | Reward: {total_reward:>7.2f} | Buffer: {len(agent.buffer)}")
-
         agent.store(state, action, reward, next_state, done)
         agent.train_step()
 
@@ -61,6 +56,8 @@ for episode in range(NUM_EPISODES):
     log_writer.writerow([episode, round(total_reward, 2), round(avg_reward, 2), round(agent.epsilon, 4)])
     log_file.flush()
 
+    print(f"Episode {episode:>4} | Reward: {total_reward:>7.2f} | Epsilon: {agent.epsilon:.3f}")
+    
     if episode % 100 == 0:
         print(f"Episode {episode:>4} | Reward: {total_reward:>7.2f} | Avg(100): {avg_reward:>7.2f} | Epsilon: {agent.epsilon:.3f}")
 

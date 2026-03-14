@@ -110,7 +110,7 @@ public class FlappyEnvironment : MonoBehaviour
             if (nextPipe != null)
             {
                 float distFromGap = Mathf.Abs(birdY - gapY);
-                if (distFromGap > 0.8f)
+                if (distFromGap > 0.5f)
                     reward -= 0.1f;
                 else
                     reward += 0.2f;
