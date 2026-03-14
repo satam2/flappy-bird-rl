@@ -94,11 +94,11 @@ public class FlappyEnvironment : MonoBehaviour
         float reward;
         if (!isAlive)
         {
-            reward = -1.0f;
+            reward = -5.0f;
         }
         else if (_pipePassed)
         {
-            reward = 5.0f;
+            reward = 10.0f;
             _pipePassed = false;
         }
         else
@@ -110,7 +110,7 @@ public class FlappyEnvironment : MonoBehaviour
             if (nextPipe != null)
             {
                 float distFromGap = Mathf.Abs(birdY - gapY);
-                if (distFromGap > 0.5f)
+                if (distFromGap > 0.8f)
                     reward -= 0.1f;
                 else
                     reward += 0.2f;
