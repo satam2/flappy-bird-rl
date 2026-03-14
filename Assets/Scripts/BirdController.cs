@@ -4,7 +4,7 @@ public class BirdController : MonoBehaviour
 {
     [SerializeField]
     private float _flapForce = 12f;
-    private Rigidbody2D _rigidBody;
+    public Rigidbody2D rb;  // NEW: make public for bridge access
     [SerializeField]
     private GameObject _menu;
     [SerializeField]
@@ -18,27 +18,30 @@ public class BirdController : MonoBehaviour
 
     public bool IsAlive
     {
-        get
-        {
-            return gameObject.activeSelf;
-        }
+        get { return gameObject.activeSelf; }
     }
 
     private void Awake()
     {
-        _rigidBody = GetComponent<Rigidbody2D>();
+        rb = GetComponent<Rigidbody2D>();  // CHANGED: _rigidBody -> rb
         gameObject.SetActive(false);
     }
 
     void Update()
     {
+        // keep mouse input for manual testing
         if(Input.GetMouseButtonDown(0)){
-        _rigidBody.linearVelocityY = _flapForce;
+            Flap();
         }
-        transform.rotation = Quaternion.Euler(0f, 0f, _rigidBody.linearVelocity.y * _rotationSpeed);
+        transform.rotation = Quaternion.Euler(0f, 0f, rb.linearVelocity.y * _rotationSpeed);
     }
 
-    // obj w rigidbody and collision encounters another obj w collision
+    // callable flap() by the bridge
+    public void Flap()
+    {
+        rb.linearVelocityY = _flapForce;
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         _pipeSpawner.destroyAllPipes();

@@ -12,7 +12,6 @@ public class PipeSpawnHandler : MonoBehaviour
     [SerializeField]
     private BirdController _bird;
 
-
     void Update()
     {
         if (_timer <= 0f && _bird.IsAlive){
@@ -26,12 +25,12 @@ public class PipeSpawnHandler : MonoBehaviour
     }
 
     void spawnPipe()
-        {
-            Vector3 newPos = new Vector3(transform.position.x, Random.Range(_offsetMin, _offsetMax));
-            GameObject newPipe = Instantiate(_pipe, newPos, transform.rotation);
-            _spawnedPipes.Add(newPipe);
-        }
-    
+    {
+        Vector3 newPos = new Vector3(transform.position.x, Random.Range(_offsetMin, _offsetMax));
+        GameObject newPipe = Instantiate(_pipe, newPos, transform.rotation);
+        _spawnedPipes.Add(newPipe);
+    }
+
     public void destroyAllPipes()
     {
         foreach(GameObject pipe in _spawnedPipes)
@@ -39,5 +38,32 @@ public class PipeSpawnHandler : MonoBehaviour
             Destroy(pipe);
         }
         _spawnedPipes.Clear();
+    }
+
+    // get the next pipe ahead of the bird
+    public GameObject GetNextPipe(float birdX)
+    {
+        GameObject nearest = null;
+        float minDist = float.MaxValue;
+
+        foreach (GameObject pipe in _spawnedPipes)
+        {
+            if (pipe == null) continue;
+            float dist = pipe.transform.position.x - birdX;
+            if (dist > 0 && dist < minDist)
+            {
+                minDist = dist;
+                nearest = pipe;
+            }
+        }
+        return nearest;
+    }
+
+    // get the Y center of the gap between TopPipe and BottomPipe
+    public float GetGapCenterY(GameObject pipe)
+    {
+        Transform top = pipe.transform.Find("TopPipe");
+        Transform bottom = pipe.transform.Find("BottomPipe");
+        return (top.position.y + bottom.position.y) / 2f;
     }
 }
