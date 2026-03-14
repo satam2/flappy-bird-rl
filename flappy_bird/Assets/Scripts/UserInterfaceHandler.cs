@@ -14,7 +14,6 @@ public class UserInterfaceHandler : MonoBehaviour
     [SerializeField]
     private ScoreDisplayScript _scoreDisplay;
     [SerializeField]
-    private GameObject _gameOverImg;
     private bool _gameOver = false;
 
     private void Start()

@@ -83,34 +83,40 @@ public class FlappyEnvironment : MonoBehaviour
         // read action first
         int action = ReadAction();
 
+        // latch pipe passed from previous frame
         if (_bird.PassedPipe)
         {
             _pipePassed = true;
             _bird.ResetPassedPipe();
         }
 
+        // read action
+        int action = ReadAction();
+
         // build reward
         float reward;
         if (!isAlive)
         {
-            reward = -1.0f;
+            reward = -1.0f;                         // died
         }
         else if (_pipePassed)
         {
-            reward = 5.0f;
+            reward = 5.0f;                          // passed a pipe!
             _pipePassed = false;
         }
         else
         {
-            reward = 0.1f;
-            if (action == 1) reward -= 0.05f;
+            reward = 0.1f;                          // stayed alive
+
+            if (action == 1) reward -= 0.1f;        // penalty for flapping
+
             if (nextPipe != null)
             {
                 float distFromGap = Mathf.Abs(birdY - gapY);
-                if (distFromGap > 1.5f)
-                    reward -= 0.2f;
+                if (distFromGap > 0.8f)
+                    reward -= 0.1f;                 // too far from gap
                 else
-                    reward += 0.2f;
+                    reward += 0.2f;                 // close to gap bonus
             }
         }
 
