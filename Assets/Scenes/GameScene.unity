@@ -241,6 +241,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+<<<<<<< HEAD
 --- !u!1 &39868190
 GameObject:
   m_ObjectHideFlags: 0
@@ -292,6 +293,8 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+=======
+>>>>>>> parent of fd84398 (updates)
 --- !u!1 &126277873
 GameObject:
   m_ObjectHideFlags: 0
@@ -1856,7 +1859,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   _flapForce: 12
-  rb: {fileID: 0}
   _menu: {fileID: 126277873}
   _scoreDisplay: {fileID: 1329892387}
   _rotationSpeed: 2
@@ -1896,7 +1898,10 @@ SceneRoots:
   - {fileID: 3278996}
   - {fileID: 607070520}
   - {fileID: 2077298982}
+<<<<<<< HEAD
   - {fileID: 39868192}
   - {fileID: 1731811457}
   - {fileID: 656626899}
   - {fileID: 1455792268}
+=======
+>>>>>>> parent of fd84398 (updates)
