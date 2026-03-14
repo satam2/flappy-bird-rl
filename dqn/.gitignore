@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.env/
+
+# Model checkpoints
+checkpoints/
+
+# Logs (remove this line if you want to keep training_log.csv)
+training_log.csv
+*.log
