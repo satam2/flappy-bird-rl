@@ -4,7 +4,7 @@ public class BirdController : MonoBehaviour
 {
     [SerializeField]
     private float _flapForce = 12f;
-    public Rigidbody2D rb;  // NEW: make public for bridge access
+    public Rigidbody2D rb;
     [SerializeField]
     private GameObject _menu;
     [SerializeField]
@@ -16,6 +16,9 @@ public class BirdController : MonoBehaviour
     [SerializeField]
     private GroundObject _ground;
 
+    private float _flapCooldown = 0f;
+    private float _flapCooldownTime = 0.15f; // NEW: minimum time between flaps
+
     public bool IsAlive
     {
         get { return gameObject.activeSelf; }
@@ -23,23 +26,32 @@ public class BirdController : MonoBehaviour
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();  // CHANGED: _rigidBody -> rb
+        rb = GetComponent<Rigidbody2D>();
         gameObject.SetActive(false);
     }
 
     void Update()
     {
-        // keep mouse input for manual testing
         if(Input.GetMouseButtonDown(0)){
             Flap();
         }
         transform.rotation = Quaternion.Euler(0f, 0f, rb.linearVelocity.y * _rotationSpeed);
+
+        // count down cooldown
+        if (_flapCooldown > 0f)
+            _flapCooldown -= Time.deltaTime;
+
+        // cap upward velocity
+        if (rb.linearVelocity.y > 10f)
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 10f);
     }
 
-    // callable flap() by the bridge
     public void Flap()
     {
+        // only flap if cooldown is done
+        if (_flapCooldown > 0f) return;
         rb.linearVelocityY = _flapForce;
+        _flapCooldown = _flapCooldownTime;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)

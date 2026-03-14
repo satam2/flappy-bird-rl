@@ -24,6 +24,11 @@ public class PipeSpawnHandler : MonoBehaviour
         }
     }
 
+    public void ResetSpawner()
+    {
+        _timer = 0f;  // spawn immediately on next Update
+    }
+
     void spawnPipe()
     {
         Vector3 newPos = new Vector3(transform.position.x, Random.Range(_offsetMin, _offsetMax));
