@@ -3,7 +3,7 @@ using UnityEngine;
 public class BirdController : MonoBehaviour
 {
     [SerializeField]
-    private float _flapForce = 12f;
+    private float _flapForce = 6f;
     public Rigidbody2D rb;
     [SerializeField]
     private GameObject _menu;
@@ -17,7 +17,8 @@ public class BirdController : MonoBehaviour
     private GroundObject _ground;
 
     private float _flapCooldown = 0f;
-    private float _flapCooldownTime = 0.15f; // NEW: minimum time between flaps
+    private float _flapCooldownTime = 0.15f; // minimum time between flaps
+    public bool PassedPipe { get; private set; } = false;
 
     public bool IsAlive
     {
@@ -65,5 +66,11 @@ public class BirdController : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D collision)
     {
         _scoreDisplay.AddScore();
+        PassedPipe = true;
+    }
+
+    public void ResetPassedPipe() 
+    {
+        PassedPipe = false;
     }
 }

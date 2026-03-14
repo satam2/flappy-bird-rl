@@ -14,6 +14,8 @@ public class PipeSpawnHandler : MonoBehaviour
 
     void Update()
     {
+        _spawnedPipes.RemoveAll(pipe => pipe == null);
+
         if (_timer <= 0f && _bird.IsAlive){
             spawnPipe();
             _timer = _spawnRate;
@@ -55,7 +57,8 @@ public class PipeSpawnHandler : MonoBehaviour
         {
             if (pipe == null) continue;
             float dist = pipe.transform.position.x - birdX;
-            if (dist > 0 && dist < minDist)
+            // include pipes slightly behind the bird too (-1f instead of 0f)
+            if (dist > -1f && dist < minDist)
             {
                 minDist = dist;
                 nearest = pipe;
@@ -67,8 +70,12 @@ public class PipeSpawnHandler : MonoBehaviour
     // get the Y center of the gap between TopPipe and BottomPipe
     public float GetGapCenterY(GameObject pipe)
     {
-        Transform top = pipe.transform.Find("TopPipe");
-        Transform bottom = pipe.transform.Find("BottomPipe");
-        return (top.position.y + bottom.position.y) / 2f;
+        Transform point = pipe.transform.Find("Point");
+        if (point == null)
+        {
+            Debug.Log("Point not found!");
+            return pipe.transform.position.y;
+        }
+        return point.position.y;
     }
 }

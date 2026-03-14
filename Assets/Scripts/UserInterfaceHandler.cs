@@ -37,7 +37,8 @@ public class UserInterfaceHandler : MonoBehaviour
         _bird.transform.position = _playerStartPos;
         _scoreDisplay.ResetScore();
         _menuUI.SetActive(false);
-        _gameOver = true;
+        _gameOver = false; // CHANGED: was true
+        _gameOverImg.SetActive(false); // NEW: hide it explicitly
     }
 }
 
