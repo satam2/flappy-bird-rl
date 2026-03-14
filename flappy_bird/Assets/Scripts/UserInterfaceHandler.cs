@@ -13,20 +13,13 @@ public class UserInterfaceHandler : MonoBehaviour
     private GameObject _menuUI;
     [SerializeField]
     private ScoreDisplayScript _scoreDisplay;
-    [SerializeField]
-    private bool _gameOver = false;
 
     private void Start()
     {
-        _gameOverImg.SetActive(false);
     }
 
     private void Update()
     {
-        if (_gameOver)
-        {
-            _gameOverImg.SetActive(true);
-        }
     }
 
     public void OnStartPressed()
@@ -36,8 +29,6 @@ public class UserInterfaceHandler : MonoBehaviour
         _bird.transform.position = _playerStartPos;
         _scoreDisplay.ResetScore();
         _menuUI.SetActive(false);
-        _gameOver = false; // CHANGED: was true
-        _gameOverImg.SetActive(false); // NEW: hide it explicitly
     }
 }
 
