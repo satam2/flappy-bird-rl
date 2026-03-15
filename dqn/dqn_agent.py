@@ -29,7 +29,7 @@ class DQNAgent:
         self.target_net.eval()
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=3e-4)
-        self.buffer = ReplayBuffer()
+        self.buffer = ReplayBuffer(capacity=50000)
 
         self.epsilon = 1.0
         self.epsilon_min = 0.01
