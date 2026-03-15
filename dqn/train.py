@@ -8,8 +8,9 @@ from dqn_agent import DQNAgent
 env = FlappyEnv()
 agent = DQNAgent()
 
-CHECKPOINT = "checkpoints/dqn_new.pth"  # change this to whichever checkpoint you want
-agent.epsilon = 1.0
+CHECKPOINT = "checkpoints/dqn_best.pth"  # change this to whichever checkpoint you want
+agent.epsilon = 0.05     
+best_avg_reward = 179.65  # update to match current best avg
 
 if os.path.exists(CHECKPOINT):
     agent.policy_net.load_state_dict(torch.load(CHECKPOINT))
@@ -20,19 +21,14 @@ else:
 
 NUM_EPISODES = 5000
 scores = []
-best_avg_reward = float("-inf")
 
 os.makedirs("checkpoints", exist_ok=True)
 
-log_mode = "a" if os.path.exists(CHECKPOINT) and os.path.exists("training_log.csv") else "w"
-log_file = open("training_log.csv", log_mode, newline="")
+log_file = open("training_log.csv", "w", newline="")  # always overwrite
 log_writer = csv.writer(log_file)
+log_writer.writerow(["episode", "total_reward", "avg_reward_100", "epsilon"])
 
-# only write header if starting fresh
-if log_mode == "w":
-    log_writer.writerow(["episode", "total_reward", "avg_reward_100", "epsilon"])
-
-for episode in range(NUM_EPISODES):
+for episode in range(1, NUM_EPISODES+1):
     state, _, _ = env.step(0)
     total_reward = 0
 
