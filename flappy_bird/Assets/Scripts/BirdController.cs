@@ -84,4 +84,9 @@ public class BirdController : MonoBehaviour
     {
         PassedPipe = false;
     }
+
+    public void ResetFlapCooldown()
+    {
+        _flapCooldown = 0f;
+    }
 }

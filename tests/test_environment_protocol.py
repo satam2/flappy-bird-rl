@@ -1,4 +1,5 @@
 from dqn.environment import format_reset_command, format_step_command, parse_packet
+from pathlib import Path
 
 
 def test_parse_packet_returns_state_reward_done_and_pipes():
@@ -22,3 +23,11 @@ def test_format_reset_command_includes_mode_and_seed():
 
 def test_format_step_command_serializes_action():
     assert format_step_command(1) == "STEP|1\n"
+
+
+def test_train_script_uses_reset_and_four_value_packets():
+    source = Path("dqn/train.py").read_text(encoding="utf-8")
+
+    assert "env.reset(" in source
+    assert "state, _, _, _ = env.reset(" in source
+    assert "next_state, reward, done, _ = env.step(action)" in source

@@ -233,6 +233,7 @@ public class FlappyEnvironment : MonoBehaviour
             _episodeDisplay.text = $"Episode: {_episodeCount}";
         _bird.transform.position = new Vector3(-2, 0, 0);
         _bird.rb.linearVelocity = Vector2.zero;
+        _bird.ResetFlapCooldown();
         _pipeSpawner.destroyAllPipes();
         _pipeSpawner.ResetSpawner();
         _scoreDisplay.ResetScore();

@@ -34,12 +34,12 @@ log_writer = csv.writer(log_file)
 log_writer.writerow(["episode", "total_reward", "avg_reward_100", "epsilon"])
 
 for episode in range(1, NUM_EPISODES+1):
-    state, _, _ = env.step(0)
+    state, _, _, _ = env.reset(mode="train", seed=episode)
     total_reward = 0
 
     while True:
         action = agent.select_action(state)
-        next_state, reward, done = env.step(action)
+        next_state, reward, done, _ = env.step(action)
 
         agent.store(state, action, reward, next_state, done)
         agent.train_step()
