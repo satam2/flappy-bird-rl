@@ -23,6 +23,8 @@ public class FlappyEnvironment : MonoBehaviour
     private Thread _connectionThread;
     private float _lastReward = 0f;
     private int _lastDone = 0;
+    private float _previousAbsDyToGap = 0f;
+    private bool _hasPreviousAbsDyToGap = false;
 
     void Start()
     {
@@ -125,18 +127,12 @@ public class FlappyEnvironment : MonoBehaviour
         _lastReward = 0f;
         _lastDone = 0;
         _pipePassed = false;
+        _previousAbsDyToGap = 0f;
+        _hasPreviousAbsDyToGap = false;
     }
 
     private void StepEpisode(int action)
     {
-        float previousAbsDy = 0f;
-        GameObject previousPipe = _pipeSpawner.GetNextPipe(_bird.transform.position.x);
-        if (previousPipe != null)
-        {
-            float previousGapY = _pipeSpawner.GetGapCenterY(previousPipe);
-            previousAbsDy = Mathf.Abs(_bird.transform.position.y - previousGapY);
-        }
-
         if (action == 1 && _bird.IsAlive)
         {
             _bird.Flap();
@@ -156,7 +152,11 @@ public class FlappyEnvironment : MonoBehaviour
             currentAbsDy = Mathf.Abs(_bird.transform.position.y - currentGapY);
         }
 
-        float shaping = Mathf.Clamp(previousAbsDy - currentAbsDy, -0.03f, 0.03f);
+        float shaping = 0f;
+        if (_hasPreviousAbsDyToGap)
+        {
+            shaping = Mathf.Clamp(_previousAbsDyToGap - currentAbsDy, -0.03f, 0.03f);
+        }
         float reward = shaping;
 
         if (_pipePassed)
@@ -172,6 +172,8 @@ public class FlappyEnvironment : MonoBehaviour
 
         _lastReward = reward;
         _lastDone = _bird.IsAlive ? 0 : 1;
+        _previousAbsDyToGap = currentAbsDy;
+        _hasPreviousAbsDyToGap = true;
     }
 
     private void SendCurrentPacket()
