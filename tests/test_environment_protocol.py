@@ -9,3 +9,8 @@ def test_parse_packet_returns_state_reward_done_and_pipes():
     assert reward == 0.03
     assert done is False
     assert pipes == 12
+
+
+def test_parse_packet_exposes_can_flap_in_last_observation_slot():
+    state, reward, done, pipes = parse_packet("0,0,0,0,0,0,1,0,0,0")
+    assert state[-1] == 1.0
