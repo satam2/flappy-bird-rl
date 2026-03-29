@@ -62,7 +62,7 @@ The current DQN implementation in [`dqn/dqn_agent.py`](./dqn/dqn_agent.py) uses:
 Checkpoints are written by [`dqn/train.py`](./dqn/train.py) to:
 
 - `dqn/checkpoints/dqn_latest.pth`
-- `dqn/checkpoints/dqn_best.pth`
+- `dqn/checkpoints/dqn_best_eval_mean50.pth` (updated when the 50-episode eval mean improves, with the comparator saved next to it as `dqn_best_eval_mean50.txt`)
 - `dqn/checkpoints/dqn_ep500.pth`, `dqn_ep1000.pth`, etc.
 
 Training metrics are also written to `dqn/training_log.csv`.
@@ -159,20 +159,19 @@ While training runs:
 - `training_log.csv` is overwritten and updated live
 - model checkpoints are saved into `dqn/checkpoints/`
 
-If `dqn/checkpoints/dqn_best.pth` already exists, `train.py` loads it before training. If it does not exist, training starts from scratch.
+If `dqn/checkpoints/dqn_best_eval_mean50.pth` exists and the accompanying `.txt` file records a valid evaluation mean, the script loads the checkpoint before continuing; otherwise it falls back on the legacy `dqn/checkpoints/dqn_best.pth` if present and starts from scratch when no checkpoint is available.
 
 ## Resuming From A Checkpoint
 
-Checkpoint loading is currently controlled directly in [`dqn/train.py`](./dqn/train.py):
-
-- `CHECKPOINT` sets which model file to load
-- `agent.epsilon` sets the starting exploration rate
-- `best_avg_reward` sets the baseline used to decide when to overwrite `dqn_best.pth`
-
-If you want to resume from a different checkpoint, edit those values before running the script.
+The redesigned flow always tries to load `dqn/checkpoints/dqn_best_eval_mean50.pth` along with the mean stored in `dqn/checkpoints/dqn_best_eval_mean50.txt`; the trainer only overwrites that checkpoint when the fresh 50-episode evaluation mean exceeds the recorded value. If the best-eval files are missing or invalid, the script will load the legacy `dqn/checkpoints/dqn_best.pth` (without modifying it) or start fresh if no fallback exists. Training parameters such as `agent.epsilon` still live in [`dqn/train.py`](./dqn/train.py) and can be tweaked there.
 
 ## Notes
 
 - The Python trainer should usually be started before pressing Play in Unity, because Unity retries the socket connection until the Python server is available.
 - The bird can still be flapped manually with mouse input because that behavior is present in [`flappy_bird/Assets/Scripts/BirdController.cs`](./flappy_bird/Assets/Scripts/BirdController.cs), but the intended workflow here is automated RL training.
 - This repo is focused on training inside the Unity editor. There is not currently a separate evaluation or inference script.
+
+## Verification Limits
+
+- Unity Play Mode / end-to-end runtime verification is blocked in this environment because the Unity editor is unavailable.
+- The bounded comparison experiment also requires the Unity runtime/editor, so it cannot be run here.
