@@ -52,7 +52,6 @@ for episode in range(1, NUM_EPISODES+1):
 
     scores.append(total_reward)
     avg_reward = np.mean(scores[-100:])
-    agent.decay_epsilon()
 
     log_writer.writerow([episode, round(total_reward, 2), round(avg_reward, 2), round(agent.epsilon, 4)])
     log_file.flush()
