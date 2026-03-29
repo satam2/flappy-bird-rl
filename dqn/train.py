@@ -2,8 +2,13 @@ import csv
 import os
 import numpy as np
 import torch
-from dqn.environment import FlappyEnv
-from dqn.dqn_agent import DQNAgent
+
+try:
+    from dqn.environment import FlappyEnv
+    from dqn.dqn_agent import DQNAgent
+except ModuleNotFoundError:
+    from environment import FlappyEnv
+    from dqn_agent import DQNAgent
 
 env = FlappyEnv()
 agent = DQNAgent()
