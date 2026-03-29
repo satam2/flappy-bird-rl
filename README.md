@@ -106,6 +106,12 @@ python -m venv .venv
 pip install numpy torch
 ```
 
+## Training
+
+1. Open the Unity scene and press Play.
+2. Run `python dqn/train.py`.
+3. The trainer saves `dqn_best_eval_mean50.pth` using 50-episode evaluation mean.
+
 ## How To Run It
 
 ### 1. Open the Unity project
