@@ -24,7 +24,7 @@ class DQN(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self, state_dim=4, action_dim=2):
+    def __init__(self, state_dim=7, action_dim=2):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.policy_net = DQN(state_dim, action_dim).to(self.device)
@@ -41,8 +41,11 @@ class DQNAgent:
 
         self.gamma = 0.99
         self.batch_size = 64
+        self.min_buffer_size = 5000
+        self.tau = 0.005
         self.target_update_freq = 100
         self.steps = 0
+        self.loss_fn = nn.SmoothL1Loss()
 
     def select_action(self, state):
         if np.random.rand() < self.epsilon:
@@ -59,7 +62,8 @@ class DQNAgent:
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 
     def train_step(self):
-        if len(self.buffer) < self.batch_size:
+        min_samples = max(self.batch_size, self.min_buffer_size)
+        if len(self.buffer) < min_samples:
             return
 
         states, actions, rewards, next_states, dones = self.buffer.sample(self.batch_size)
@@ -70,17 +74,20 @@ class DQNAgent:
         next_states_t = torch.FloatTensor(next_states).to(self.device)
         dones_t       = torch.FloatTensor(dones).to(self.device)
 
-        q_values = self.policy_net(states_t).gather(1, actions_t.unsqueeze(1)).squeeze()
+        q_values = self.policy_net(states_t).gather(1, actions_t.unsqueeze(1)).squeeze(1)
 
         with torch.no_grad():
-            next_q = self.target_net(next_states_t).max(1)[0]
+            next_actions = self.policy_net(next_states_t).argmax(dim=1, keepdim=True)
+            next_q = self.target_net(next_states_t).gather(1, next_actions).squeeze(1)
             target = rewards_t + self.gamma * next_q * (1 - dones_t)
 
-        loss = nn.MSELoss()(q_values, target)
+        loss = self.loss_fn(q_values, target)
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), max_norm=10.0)
         self.optimizer.step()
 
         self.steps += 1
-        if self.steps % self.target_update_freq == 0:
-            self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.decay_epsilon()
+        for target_param, policy_param in zip(self.target_net.parameters(), self.policy_net.parameters()):
+            target_param.data.copy_(self.tau * policy_param.data + (1.0 - self.tau) * target_param.data)
