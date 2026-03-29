@@ -23,7 +23,6 @@ public class FlappyEnvironment : MonoBehaviour
     private Thread _connectionThread;
     private float _lastReward = 0f;
     private int _lastDone = 0;
-    private int _pipesPassed = 0;
 
     void Start()
     {
@@ -125,23 +124,20 @@ public class FlappyEnvironment : MonoBehaviour
         StartEpisode();
         _lastReward = 0f;
         _lastDone = 0;
-        _pipesPassed = 0;
         _pipePassed = false;
     }
 
     private void StepEpisode(int action)
     {
-        bool isAlive = _bird.IsAlive;
-        float birdY = _bird.transform.position.y;
-        float gapY = 0f;
-
-        GameObject nextPipe = _pipeSpawner.GetNextPipe(_bird.transform.position.x);
-        if (nextPipe != null)
+        float previousAbsDy = 0f;
+        GameObject previousPipe = _pipeSpawner.GetNextPipe(_bird.transform.position.x);
+        if (previousPipe != null)
         {
-            gapY = _pipeSpawner.GetGapCenterY(nextPipe);
+            float previousGapY = _pipeSpawner.GetGapCenterY(previousPipe);
+            previousAbsDy = Mathf.Abs(_bird.transform.position.y - previousGapY);
         }
 
-        if (action == 1 && isAlive)
+        if (action == 1 && _bird.IsAlive)
         {
             _bird.Flap();
         }
@@ -152,32 +148,29 @@ public class FlappyEnvironment : MonoBehaviour
             _bird.ResetPassedPipe();
         }
 
+        float currentAbsDy = 0f;
+        GameObject currentPipe = _pipeSpawner.GetNextPipe(_bird.transform.position.x);
+        if (currentPipe != null)
+        {
+            float currentGapY = _pipeSpawner.GetGapCenterY(currentPipe);
+            currentAbsDy = Mathf.Abs(_bird.transform.position.y - currentGapY);
+        }
+
+        float shaping = Mathf.Clamp(previousAbsDy - currentAbsDy, -0.03f, 0.03f);
+        float reward = shaping;
+
+        if (_pipePassed)
+        {
+            reward += 1.0f;
+            _pipePassed = false;
+        }
+
         if (!_bird.IsAlive)
         {
-            _lastReward = -5.0f;
-        }
-        else if (_pipePassed)
-        {
-            _lastReward = 10.0f;
-            _pipePassed = false;
-            _pipesPassed++;
-        }
-        else
-        {
-            _lastReward = 0.1f;
-
-            if (action == 1) _lastReward -= 0.1f;
-
-            if (nextPipe != null)
-            {
-                float distFromGap = Mathf.Abs(birdY - gapY);
-                if (distFromGap > 0.8f)
-                    _lastReward -= 0.1f;
-                else
-                    _lastReward += 0.2f;
-            }
+            reward = -2.0f;
         }
 
+        _lastReward = reward;
         _lastDone = _bird.IsAlive ? 0 : 1;
     }
 
@@ -213,7 +206,8 @@ public class FlappyEnvironment : MonoBehaviour
         float normDxFollowing = dxFollowing / 8f;
         float normDyFollowing = dyFollowing / 5f;
 
-        string msg = $"{normBirdY},{normVelY},{normDxNext},{normDyNext},{normDxFollowing},{normDyFollowing},{canFlap},{_lastReward},{_lastDone},{_pipesPassed}\n";
+        int pipesPassed = _scoreDisplay != null ? _scoreDisplay.CurrentScore : 0;
+        string msg = $"{normBirdY},{normVelY},{normDxNext},{normDyNext},{normDxFollowing},{normDyFollowing},{canFlap},{_lastReward},{_lastDone},{pipesPassed}\n";
 
         try
         {
