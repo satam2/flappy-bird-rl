@@ -2,8 +2,8 @@ import csv
 import os
 import numpy as np
 import torch
-from environment import FlappyEnv
-from dqn_agent import DQNAgent
+from dqn.environment import FlappyEnv
+from dqn.dqn_agent import DQNAgent
 
 env = FlappyEnv()
 agent = DQNAgent()

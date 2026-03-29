@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from replay_buffer import ReplayBuffer
+from dqn.replay_buffer import ReplayBuffer
 
 class DQN(nn.Module):
     def __init__(self, state_dim, action_dim):
