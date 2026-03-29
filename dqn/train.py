@@ -6,22 +6,33 @@ import torch
 try:
     from dqn.environment import FlappyEnv
     from dqn.dqn_agent import DQNAgent
-    from dqn.evaluation import run_evaluation, should_save_best
+    from dqn.evaluation import (
+        load_best_eval_mean,
+        run_evaluation,
+        save_best_eval_mean,
+        should_save_best,
+    )
 except ModuleNotFoundError:
     from environment import FlappyEnv
     from dqn_agent import DQNAgent
-    from evaluation import run_evaluation, should_save_best
+    from evaluation import (
+        load_best_eval_mean,
+        run_evaluation,
+        save_best_eval_mean,
+        should_save_best,
+    )
 
 env = FlappyEnv()
 agent = DQNAgent()
 
 CHECKPOINT_BEST_EVAL = "checkpoints/dqn_best_eval_mean50.pth"
+CHECKPOINT_BEST_EVAL_METRIC = "checkpoints/dqn_best_eval_mean50.txt"
 CHECKPOINT_LEGACY_BEST = "checkpoints/dqn_best.pth"
 CHECKPOINT_LATEST = "checkpoints/dqn_latest.pth"
 NUM_EPISODES = 5000
 EVAL_INTERVAL = 100
 EVAL_EPISODES = 50
-best_eval_mean = float("-inf")
+best_eval_mean = load_best_eval_mean(CHECKPOINT_BEST_EVAL_METRIC)
 
 if os.path.exists(CHECKPOINT_BEST_EVAL):
     state_dict = torch.load(CHECKPOINT_BEST_EVAL)
@@ -90,6 +101,7 @@ for episode in range(1, NUM_EPISODES + 1):
         if should_save_best(best_eval_mean, eval_metrics["mean_pipes"]):
             best_eval_mean = eval_metrics["mean_pipes"]
             torch.save(agent.policy_net.state_dict(), CHECKPOINT_BEST_EVAL)
+            save_best_eval_mean(CHECKPOINT_BEST_EVAL_METRIC, best_eval_mean)
             print(
                 f"New best eval model saved: {CHECKPOINT_BEST_EVAL} "
                 f"(mean pipes {best_eval_mean:.2f})"

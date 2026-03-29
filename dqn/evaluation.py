@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 
 
@@ -12,6 +14,23 @@ def summarize_scores(scores, early_deaths):
 
 def should_save_best(current_best, candidate_mean):
     return candidate_mean > current_best
+
+
+def load_best_eval_mean(path):
+    metric_path = Path(path)
+    if not metric_path.exists():
+        return float("-inf")
+
+    try:
+        return float(metric_path.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return float("-inf")
+
+
+def save_best_eval_mean(path, metric_value):
+    metric_path = Path(path)
+    metric_path.parent.mkdir(parents=True, exist_ok=True)
+    metric_path.write_text(str(float(metric_value)), encoding="utf-8")
 
 
 def run_evaluation(env, agent, num_episodes=50, base_seed=10000):

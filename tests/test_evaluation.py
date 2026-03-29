@@ -1,4 +1,9 @@
-from dqn.evaluation import should_save_best, summarize_scores
+from dqn.evaluation import (
+    load_best_eval_mean,
+    save_best_eval_mean,
+    should_save_best,
+    summarize_scores,
+)
 
 
 def test_summarize_scores_reports_mean_median_and_std():
@@ -19,3 +24,13 @@ def test_summarize_scores_treats_scores_as_pipe_counts():
 def test_should_save_best_uses_eval_mean_not_training_reward():
     assert should_save_best(current_best=149.0, candidate_mean=150.5) is True
     assert should_save_best(current_best=151.0, candidate_mean=150.5) is False
+
+
+def test_best_eval_mean_roundtrip_persists_for_resume(tmp_path):
+    metric_path = tmp_path / "dqn_best_eval_mean50.txt"
+
+    assert load_best_eval_mean(metric_path) == float("-inf")
+
+    save_best_eval_mean(metric_path, 152.75)
+
+    assert load_best_eval_mean(metric_path) == 152.75
