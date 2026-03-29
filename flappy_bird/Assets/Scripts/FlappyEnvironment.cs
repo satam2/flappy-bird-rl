@@ -18,12 +18,12 @@ public class FlappyEnvironment : MonoBehaviour
     private TcpClient _client;
     private NetworkStream _stream;
     private bool _connected = false;
-    private bool _wasAlive = false;
-    private bool _isResetting = false;
-    private bool _shouldStartEpisode = false;
     private string _recvBuffer = "";
     private bool _pipePassed = false;
     private Thread _connectionThread;
+    private float _lastReward = 0f;
+    private int _lastDone = 0;
+    private int _pipesPassed = 0;
 
     void Start()
     {
@@ -40,7 +40,6 @@ public class FlappyEnvironment : MonoBehaviour
                     _client.ReceiveTimeout = 100;
                     _stream = _client.GetStream();
                     _connected = true;
-                    _shouldStartEpisode = true;
                     Debug.Log("Connected to Python!");
                 }
                 catch
@@ -55,82 +54,169 @@ public class FlappyEnvironment : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (_shouldStartEpisode)
+        if (!_connected || _stream == null) return;
+        if (!TryReadLine(out string line)) return;
+        HandleCommand(line);
+    }
+
+    private bool TryReadLine(out string line)
+    {
+        line = "";
+
+        while (true)
         {
-            _shouldStartEpisode = false;
-            StartEpisode();
-            return;
+            int newline = _recvBuffer.IndexOf('\n');
+            if (newline >= 0)
+            {
+                line = _recvBuffer.Substring(0, newline).Trim();
+                _recvBuffer = _recvBuffer.Substring(newline + 1);
+                return true;
+            }
+
+            byte[] buf = new byte[16];
+            try
+            {
+                int bytes = _stream.Read(buf, 0, buf.Length);
+                if (bytes > 0)
+                {
+                    _recvBuffer += Encoding.UTF8.GetString(buf, 0, bytes);
+                    continue;
+                }
+                return false;
+            }
+            catch (System.IO.IOException)
+            {
+                return false;
+            }
         }
+    }
 
-        if (!_connected || _isResetting) return;
+    private void HandleCommand(string line)
+    {
+        if (string.IsNullOrEmpty(line)) return;
 
+        string[] parts = line.Split('|');
+        if (parts.Length == 0) return;
+
+        switch (parts[0])
+        {
+            case "RESET":
+                string mode = parts.Length > 1 ? parts[1] : "train";
+                int seed = 0;
+                if (parts.Length > 2)
+                {
+                    int.TryParse(parts[2], out seed);
+                }
+                ResetEpisode(mode, seed);
+                SendCurrentPacket();
+                break;
+            case "STEP":
+                if (parts.Length < 2) return;
+                if (!int.TryParse(parts[1], out int action)) return;
+                StepEpisode(action);
+                SendCurrentPacket();
+                break;
+        }
+    }
+
+    private void ResetEpisode(string mode, int seed)
+    {
+        Random.InitState(seed);
+        StartEpisode();
+        _lastReward = 0f;
+        _lastDone = 0;
+        _pipesPassed = 0;
+        _pipePassed = false;
+    }
+
+    private void StepEpisode(int action)
+    {
         bool isAlive = _bird.IsAlive;
-
-        if (!isAlive && _isResetting) return;
-
         float birdY = _bird.transform.position.y;
-        float velY  = _bird.rb.linearVelocity.y;
-        float pipeX = 0f;
-        float gapY  = 0f;
+        float gapY = 0f;
 
         GameObject nextPipe = _pipeSpawner.GetNextPipe(_bird.transform.position.x);
         if (nextPipe != null)
         {
-            pipeX = nextPipe.transform.position.x - _bird.transform.position.x;
-            gapY  = _pipeSpawner.GetGapCenterY(nextPipe);
+            gapY = _pipeSpawner.GetGapCenterY(nextPipe);
         }
 
-        // latch pipe passed from previous frame
+        if (action == 1 && isAlive)
+        {
+            _bird.Flap();
+        }
+
         if (_bird.PassedPipe)
         {
             _pipePassed = true;
             _bird.ResetPassedPipe();
         }
 
-        // read action ONCE
-        int action = ReadAction();
-
-        // build reward
-        float reward;
-        if (!isAlive)
+        if (!_bird.IsAlive)
         {
-            reward = -5.0f;
+            _lastReward = -5.0f;
         }
         else if (_pipePassed)
         {
-            reward = 10.0f;
+            _lastReward = 10.0f;
             _pipePassed = false;
+            _pipesPassed++;
         }
         else
         {
-            reward = 0.1f;
+            _lastReward = 0.1f;
 
-            if (action == 1) reward -= 0.1f;
+            if (action == 1) _lastReward -= 0.1f;
 
             if (nextPipe != null)
             {
                 float distFromGap = Mathf.Abs(birdY - gapY);
                 if (distFromGap > 0.8f)
-                    reward -= 0.1f;
+                    _lastReward -= 0.1f;
                 else
-                    reward += 0.2f;
+                    _lastReward += 0.2f;
             }
         }
 
-        int done = isAlive ? 0 : 1;
+        _lastDone = _bird.IsAlive ? 0 : 1;
+    }
 
-        // execute action
-        if (action == 1 && isAlive)
-            _bird.Flap();
+    private void SendCurrentPacket()
+    {
+        if (_stream == null) return;
+
+        float birdX = _bird.transform.position.x;
+        float birdY = _bird.transform.position.y;
+        float velY = _bird.rb.linearVelocity.y;
+        float dxNext = 0f;
+        float dyNext = 0f;
+        float dxFollowing = 0f;
+        float dyFollowing = 0f;
+
+        if (_pipeSpawner.TryGetUpcomingPipes(birdX, out GameObject nextPipe, out GameObject followingPipe))
+        {
+            dxNext = nextPipe.transform.position.x - birdX;
+            dyNext = _pipeSpawner.GetGapCenterY(nextPipe) - birdY;
+
+            if (followingPipe != null)
+            {
+                dxFollowing = followingPipe.transform.position.x - birdX;
+                dyFollowing = _pipeSpawner.GetGapCenterY(followingPipe) - birdY;
+            }
+        }
+
+        float canFlap = _bird.CanFlap ? 1f : 0f;
+        float normBirdY = birdY / 5f;
+        float normVelY = velY / 10f;
+        float normDxNext = dxNext / 8f;
+        float normDyNext = dyNext / 5f;
+        float normDxFollowing = dxFollowing / 8f;
+        float normDyFollowing = dyFollowing / 5f;
+
+        string msg = $"{normBirdY},{normVelY},{normDxNext},{normDyNext},{normDxFollowing},{normDyFollowing},{canFlap},{_lastReward},{_lastDone},{_pipesPassed}\n";
 
         try
         {
-            float normBirdY = birdY / 5f;
-            float normVelY  = velY / 10f;
-            float normPipeX = pipeX / 8f;
-            float normGapY  = gapY / 5f;
-
-            string msg = $"{normBirdY},{normVelY},{normPipeX},{normGapY},{reward},{done}\n";
             byte[] data = Encoding.UTF8.GetBytes(msg);
             _stream.Write(data, 0, data.Length);
         }
@@ -138,47 +224,10 @@ public class FlappyEnvironment : MonoBehaviour
         {
             Debug.Log($"Socket error: {e.Message}");
         }
-
-        if (!isAlive && _wasAlive && !_isResetting)
-        {
-            _wasAlive = false;
-            _isResetting = true;
-            Invoke(nameof(StartEpisode), 0.3f);
-        }
-    }
-
-    int ReadAction()
-    {
-        while (true)
-        {
-            // check if we already have a complete line in buffer
-            int newline = _recvBuffer.IndexOf('\n');
-            if (newline >= 0)
-            {
-                string line = _recvBuffer.Substring(0, newline).Trim();
-                _recvBuffer = _recvBuffer.Substring(newline + 1);
-                return int.Parse(line);
-            }
-
-            // read more data
-            byte[] buf = new byte[16];
-            try
-            {
-                int bytes = _stream.Read(buf, 0, buf.Length);
-                if (bytes > 0)
-                    _recvBuffer += Encoding.UTF8.GetString(buf, 0, bytes);
-            }
-            catch (System.IO.IOException)
-            {
-                // timeout - return no action
-                return 0;
-            }
-        }
     }
 
     void StartEpisode()
     {
-        _isResetting = false;
         _episodeCount++;
         if (_episodeDisplay != null)
             _episodeDisplay.text = $"Episode: {_episodeCount}";
@@ -190,7 +239,7 @@ public class FlappyEnvironment : MonoBehaviour
         _ground.setScrolling(true);
         _bird.gameObject.SetActive(true);
         _menu.SetActive(false);
-        _wasAlive = true;
+        _bird.ResetPassedPipe();
     }
 
     void OnApplicationQuit()

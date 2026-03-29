@@ -2,8 +2,16 @@ import socket
 import numpy as np
 
 
+def format_reset_command(mode: str, seed: int) -> str:
+    return f"RESET|{mode}|{seed}\n"
+
+
+def format_step_command(action: int) -> str:
+    return f"STEP|{action}\n"
+
+
 def parse_packet(packet: str):
-    values = list(map(float, packet.split(",")))
+    values = list(map(float, packet.strip().split(",")))
     state = np.array(values[:7], dtype=np.float32)
     reward = values[7]
     done = bool(int(values[8]))
@@ -22,17 +30,15 @@ class FlappyEnv:
         print("Connected!")
         self._buffer = ""  # persistent buffer
 
-    def step(self, action):
-        # send action
-        self.conn.sendall(f"{action}\n".encode())
+    def reset(self, mode="train", seed=0):
+        self.conn.sendall(format_reset_command(mode, seed).encode())
+        packet = self._recv_line()
+        return parse_packet(packet)
 
-        # receive one complete line from Unity
-        data = self._recv_line()
-        parts = list(map(float, data.split(",")))
-        state  = np.array(parts[:4], dtype=np.float32)
-        reward = parts[4]
-        done   = bool(parts[5])
-        return state, reward, done
+    def step(self, action):
+        self.conn.sendall(format_step_command(action).encode())
+        packet = self._recv_line()
+        return parse_packet(packet)
 
     def _recv_line(self):
         # keep reading until we have a complete line

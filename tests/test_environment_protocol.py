@@ -1,4 +1,4 @@
-from dqn.environment import parse_packet
+from dqn.environment import format_reset_command, format_step_command, parse_packet
 
 
 def test_parse_packet_returns_state_reward_done_and_pipes():
@@ -14,3 +14,11 @@ def test_parse_packet_returns_state_reward_done_and_pipes():
 def test_parse_packet_exposes_can_flap_in_last_observation_slot():
     state, reward, done, pipes = parse_packet("0,0,0,0,0,0,1,0,0,0")
     assert state[-1] == 1.0
+
+
+def test_format_reset_command_includes_mode_and_seed():
+    assert format_reset_command("eval", 42) == "RESET|eval|42\n"
+
+
+def test_format_step_command_serializes_action():
+    assert format_step_command(1) == "STEP|1\n"
