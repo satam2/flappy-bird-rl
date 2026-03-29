@@ -30,4 +30,4 @@ def test_train_script_uses_reset_and_four_value_packets():
 
     assert "env.reset(" in source
     assert "state, _, _, _ = env.reset(" in source
-    assert "next_state, reward, done, _ = env.step(action)" in source
+    assert "next_state, reward, done, pipes_passed = env.step(action)" in source

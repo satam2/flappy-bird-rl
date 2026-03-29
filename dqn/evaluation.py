@@ -22,9 +22,14 @@ def load_best_eval_mean(path):
         return float("-inf")
 
     try:
-        return float(metric_path.read_text(encoding="utf-8").strip())
+        metric_value = float(metric_path.read_text(encoding="utf-8").strip())
     except (OSError, ValueError):
         return float("-inf")
+
+    if not np.isfinite(metric_value):
+        return float("-inf")
+
+    return metric_value
 
 
 def save_best_eval_mean(path, metric_value):

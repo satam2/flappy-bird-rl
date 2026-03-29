@@ -34,3 +34,10 @@ def test_best_eval_mean_roundtrip_persists_for_resume(tmp_path):
     save_best_eval_mean(metric_path, 152.75)
 
     assert load_best_eval_mean(metric_path) == 152.75
+
+
+def test_load_best_eval_mean_treats_non_finite_values_as_invalid(tmp_path):
+    metric_path = tmp_path / "dqn_best_eval_mean50.txt"
+    metric_path.write_text("nan", encoding="utf-8")
+
+    assert load_best_eval_mean(metric_path) == float("-inf")

@@ -33,12 +33,21 @@ NUM_EPISODES = 5000
 EVAL_INTERVAL = 100
 EVAL_EPISODES = 50
 best_eval_mean = load_best_eval_mean(CHECKPOINT_BEST_EVAL_METRIC)
+can_update_best_eval_checkpoint = True
 
 if os.path.exists(CHECKPOINT_BEST_EVAL):
-    state_dict = torch.load(CHECKPOINT_BEST_EVAL)
-    agent.policy_net.load_state_dict(state_dict)
-    agent.target_net.load_state_dict(state_dict)
-    print(f"Loaded checkpoint: {CHECKPOINT_BEST_EVAL}")
+    if best_eval_mean != float("-inf"):
+        state_dict = torch.load(CHECKPOINT_BEST_EVAL)
+        agent.policy_net.load_state_dict(state_dict)
+        agent.target_net.load_state_dict(state_dict)
+        print(f"Loaded checkpoint: {CHECKPOINT_BEST_EVAL}")
+    else:
+        can_update_best_eval_checkpoint = False
+        print(
+            f"Warning: Found {CHECKPOINT_BEST_EVAL} but missing/invalid "
+            f"{CHECKPOINT_BEST_EVAL_METRIC}; skipping best-eval checkpoint load "
+            "and best-eval checkpoint updates for this run."
+        )
 elif os.path.exists(CHECKPOINT_LEGACY_BEST):
     state_dict = torch.load(CHECKPOINT_LEGACY_BEST)
     agent.policy_net.load_state_dict(state_dict)
@@ -98,7 +107,9 @@ for episode in range(1, NUM_EPISODES + 1):
             num_episodes=EVAL_EPISODES,
             base_seed=10000 + episode,
         )
-        if should_save_best(best_eval_mean, eval_metrics["mean_pipes"]):
+        if can_update_best_eval_checkpoint and should_save_best(
+            best_eval_mean, eval_metrics["mean_pipes"]
+        ):
             best_eval_mean = eval_metrics["mean_pipes"]
             torch.save(agent.policy_net.state_dict(), CHECKPOINT_BEST_EVAL)
             save_best_eval_mean(CHECKPOINT_BEST_EVAL_METRIC, best_eval_mean)
