@@ -15,6 +15,8 @@ public class ScoreDisplayScript : MonoBehaviour
     private int _score = 0;
     private int _bestScore = 0;
 
+    public int CurrentScore => _score;
+
     void Start()
     {
         UpdateScoreDisplay();

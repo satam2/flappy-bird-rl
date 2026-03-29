@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class PipeSpawnHandler : MonoBehaviour
 {
@@ -50,21 +51,22 @@ public class PipeSpawnHandler : MonoBehaviour
     // get the next pipe ahead of the bird
     public GameObject GetNextPipe(float birdX)
     {
-        GameObject nearest = null;
-        float minDist = float.MaxValue;
+        TryGetUpcomingPipes(birdX, out GameObject nextPipe, out _);
+        return nextPipe;
+    }
 
-        foreach (GameObject pipe in _spawnedPipes)
-        {
-            if (pipe == null) continue;
-            float dist = pipe.transform.position.x - birdX;
-            // include pipes slightly behind the bird too (-1f instead of 0f)
-            if (dist > -1f && dist < minDist)
-            {
-                minDist = dist;
-                nearest = pipe;
-            }
-        }
-        return nearest;
+    public bool TryGetUpcomingPipes(float birdX, out GameObject nextPipe, out GameObject followingPipe)
+    {
+        _spawnedPipes.RemoveAll(pipe => pipe == null);
+
+        List<GameObject> ordered = _spawnedPipes
+            .Where(pipe => pipe != null && pipe.transform.position.x - birdX > -1f)
+            .OrderBy(pipe => pipe.transform.position.x)
+            .ToList();
+
+        nextPipe = ordered.Count > 0 ? ordered[0] : null;
+        followingPipe = ordered.Count > 1 ? ordered[1] : null;
+        return nextPipe != null;
     }
 
     // get the Y center of the gap between TopPipe and BottomPipe

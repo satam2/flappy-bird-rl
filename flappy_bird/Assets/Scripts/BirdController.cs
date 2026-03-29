@@ -25,6 +25,17 @@ public class BirdController : MonoBehaviour
         get { return gameObject.activeSelf; }
     }
 
+    public bool CanFlap => _flapCooldown <= 0f;
+
+    public float CooldownRemainingNormalized
+    {
+        get
+        {
+            if (_flapCooldownTime <= 0f) return 0f;
+            return Mathf.Clamp01(_flapCooldown / _flapCooldownTime);
+        }
+    }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -72,5 +83,10 @@ public class BirdController : MonoBehaviour
     public void ResetPassedPipe() 
     {
         PassedPipe = false;
+    }
+
+    public void ResetFlapCooldown()
+    {
+        _flapCooldown = 0f;
     }
 }
