@@ -19,6 +19,10 @@ public class BirdController : MonoBehaviour
     private float _flapCooldown = 0f;
     private float _flapCooldownTime = 0.15f; // minimum time between flaps
     public bool PassedPipe { get; private set; } = false;
+    public bool AgentControlled { get; set; }
+    public float NormalizedCooldown => Mathf.Max(0f, _flapCooldown) / _flapCooldownTime;
+    private readonly System.Collections.Generic.HashSet<int> _scoredPipes = new();
+    private int _pendingScore;
 
     public bool IsAlive
     {
@@ -33,6 +37,7 @@ public class BirdController : MonoBehaviour
 
     void Update()
     {
+        if (AgentControlled) return;
         if(Input.GetMouseButtonDown(0)){
             Flap();
         }
@@ -45,6 +50,43 @@ public class BirdController : MonoBehaviour
         // cap upward velocity
         if (rb.linearVelocity.y > 10f)
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 10f);
+    }
+
+    public void AdvanceSimulation(int action, float dt)
+    {
+        if (action == 1) Flap();
+    }
+
+    public void FinishSimulationStep(float dt)
+    {
+        _flapCooldown = Mathf.Max(0f, _flapCooldown - dt);
+        rb.rotation = rb.linearVelocity.y * _rotationSpeed;
+        rb.angularVelocity = 0f;
+        if (rb.linearVelocity.y > 10f)
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 10f);
+    }
+
+    public void ResetEpisode(Vector3 position)
+    {
+        gameObject.SetActive(true);
+        transform.position = position;
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+        rb.rotation = 0f;
+        _flapCooldown = 0f;
+        PassedPipe = false;
+        _scoredPipes.Clear();
+        _pendingScore = 0;
+    }
+
+    public void CommitPipePass()
+    {
+        if (IsAlive)
+        {
+            for (int i = 0; i < _pendingScore; i++) _scoreDisplay.AddScore();
+            PassedPipe = _pendingScore > 0;
+        }
+        _pendingScore = 0;
     }
 
     public void Flap()
@@ -65,6 +107,14 @@ public class BirdController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (AgentControlled && !IsAlive) return;
+        PipeObject pipe = collision.GetComponentInParent<PipeObject>();
+        if (pipe == null || !_scoredPipes.Add(pipe.GetInstanceID())) return;
+        if (AgentControlled)
+        {
+            _pendingScore++;
+            return;
+        }
         _scoreDisplay.AddScore();
         PassedPipe = true;
     }

@@ -1,1 +1,17 @@
 /flappy_bird/Assets/_Recovery/
+.venv/
+__pycache__/
+.pytest_cache/
+runs/
+flappy_bird/Library/
+flappy_bird/Temp/
+flappy_bird/Logs/
+flappy_bird/obj/
+
+# Local instructions and generated reports.
+AGENTS.md
+docs/
+/REWARD_PROGRESSION.md
+/CHANGELOG.md
+/CODE_REVIEW.md
+/DELIVERY_REPORT.md

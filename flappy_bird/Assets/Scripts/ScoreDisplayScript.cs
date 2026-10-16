@@ -13,6 +13,7 @@ public class ScoreDisplayScript : MonoBehaviour
     private Transform _bestScoreDisplay;
 
     private int _score = 0;
+    public int Score => _score;
     private int _bestScore = 0;
 
     void Start()

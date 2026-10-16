@@ -1,37 +1,63 @@
+import json
 import socket
+
 import numpy as np
 
+
 class FlappyEnv:
-    def __init__(self, host="127.0.0.1", port=9999):
+    backend = 'unity-v2'
+
+    def __init__(self, host='127.0.0.1', port=9999, timeout=300):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server.bind((host, port))
-        self.server.listen(1)
-        print("Waiting for Unity to connect...")
-        self.conn, _ = self.server.accept()
-        print("Connected!")
-        self._buffer = ""  # persistent buffer
+        self.conn = None
+        self._buffer = b''
+        try:
+            self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server.settimeout(timeout)
+            self.server.bind((host, port))
+            self.server.listen(1)
+            print(f'Waiting for Unity on {host}:{port}...', flush=True)
+            self.conn, _ = self.server.accept()
+            self.conn.settimeout(timeout)
+            self.conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except BaseException:
+            self.close()
+            raise
+
+    def reset(self, seed=None):
+        state, _, _, info = self._request({'command': 'reset', 'seed': int(seed or 0)})
+        return state, info
 
     def step(self, action):
-        # send action
-        self.conn.sendall(f"{action}\n".encode())
+        if action not in (0, 1):
+            raise ValueError('action must be 0 or 1')
+        return self._request({'command': 'step', 'action': int(action)})
 
-        # receive one complete line from Unity
-        data = self._recv_line()
-        parts = list(map(float, data.split(",")))
-        state  = np.array(parts[:4], dtype=np.float32)
-        reward = parts[4]
-        done   = bool(parts[5])
-        return state, reward, done
+    def _request(self, command):
+        try:
+            self.conn.sendall((json.dumps(command) + '\n').encode('ascii'))
+            while b'\n' not in self._buffer:
+                chunk = self.conn.recv(4096)
+                if not chunk:
+                    raise ConnectionError('Unity disconnected')
+                self._buffer += chunk
+                if len(self._buffer) > 65536:
+                    raise ValueError('Unity response exceeds protocol limit')
+            line, self._buffer = self._buffer.split(b'\n', 1)
+            result = json.loads(line)
+            if result.get('error'):
+                raise RuntimeError(result['error'])
+            state = np.asarray(result['state'], dtype=np.float32)
+            if result.get('protocol') != 2 or state.shape != (5,) or not np.isfinite(state).all():
+                raise ValueError('Expected protocol 2 with five finite state values')
+            return state, float(result['reward']), bool(result['done']), {
+                'score': int(result['score']), 'backend': self.backend}
+        except OSError as exc:
+            self.close()
+            raise ConnectionError('Unity connection failed; restart the environment') from exc
 
-    def _recv_line(self):
-        # keep reading until we have a complete line
-        while "\n" not in self._buffer:
-            chunk = self.conn.recv(256).decode()
-            if not chunk:
-                raise ConnectionError("Unity disconnected")
-            self._buffer += chunk
-
-        # split off the first complete line
-        line, self._buffer = self._buffer.split("\n", 1)
-        return line.strip()
+    def close(self):
+        if self.conn is not None:
+            self.conn.close()
+            self.conn = None
+        self.server.close()

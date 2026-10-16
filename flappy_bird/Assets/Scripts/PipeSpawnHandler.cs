@@ -11,9 +11,11 @@ public class PipeSpawnHandler : MonoBehaviour
     private float _offsetMin = -2, _offsetMax = 2;
     [SerializeField]
     private BirdController _bird;
+    public bool AgentControlled { get; set; }
 
     void Update()
     {
+        if (AgentControlled) return;
         _spawnedPipes.RemoveAll(pipe => pipe == null);
 
         if (_timer <= 0f && _bird.IsAlive){
@@ -26,6 +28,29 @@ public class PipeSpawnHandler : MonoBehaviour
         }
     }
 
+    public void SpawnInitialPipe()
+    {
+        spawnPipe();
+        _timer = _spawnRate;
+    }
+
+    public void MovePipes(float dt)
+    {
+        _spawnedPipes.RemoveAll(pipe => pipe == null || !pipe.activeSelf);
+        foreach (GameObject pipe in _spawnedPipes)
+            pipe.GetComponent<PipeObject>().AdvanceSimulation(dt);
+    }
+
+    public void FinishSimulationStep(float dt)
+    {
+        if (_timer <= 0.00001f && _bird.IsAlive)
+        {
+            spawnPipe();
+            _timer = _spawnRate;
+        }
+        else _timer -= dt;
+    }
+
     public void ResetSpawner()
     {
         _timer = 0f;  // spawn immediately on next Update
@@ -35,6 +60,7 @@ public class PipeSpawnHandler : MonoBehaviour
     {
         Vector3 newPos = new Vector3(transform.position.x, Random.Range(_offsetMin, _offsetMax));
         GameObject newPipe = Instantiate(_pipe, newPos, transform.rotation);
+        newPipe.GetComponent<PipeObject>().AgentControlled = AgentControlled;
         _spawnedPipes.Add(newPipe);
     }
 
@@ -42,6 +68,8 @@ public class PipeSpawnHandler : MonoBehaviour
     {
         foreach(GameObject pipe in _spawnedPipes)
         {
+            if (pipe == null) continue;
+            pipe.SetActive(false);
             Destroy(pipe);
         }
         _spawnedPipes.Clear();
@@ -55,7 +83,7 @@ public class PipeSpawnHandler : MonoBehaviour
 
         foreach (GameObject pipe in _spawnedPipes)
         {
-            if (pipe == null) continue;
+            if (pipe == null || !pipe.activeSelf) continue;
             float dist = pipe.transform.position.x - birdX;
             // include pipes slightly behind the bird too (-1f instead of 0f)
             if (dist > -1f && dist < minDist)
